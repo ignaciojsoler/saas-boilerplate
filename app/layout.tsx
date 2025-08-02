@@ -9,8 +9,21 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
+  title: "SaaS Boilerplate - Plataforma Completa",
+  description: "Plataforma SaaS completa con autenticación, facturación y gestión de usuarios",
+  keywords: ["SaaS", "Next.js", "Supabase", "MercadoPago", "autenticación", "facturación"],
+  authors: [{ name: "SaaS Boilerplate Team" }],
+  openGraph: {
+    title: "SaaS Boilerplate - Plataforma Completa",
+    description: "Plataforma SaaS completa con autenticación, facturación y gestión de usuarios",
+    type: "website",
+    url: defaultUrl,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SaaS Boilerplate - Plataforma Completa",
+    description: "Plataforma SaaS completa con autenticación, facturación y gestión de usuarios",
+  },
 };
 
 const geistSans = Geist({
@@ -25,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
         <ThemeProvider
           attribute="class"

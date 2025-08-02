@@ -1,123 +1,220 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# SaaS Boilerplate - Plataforma Completa
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+Una plataforma SaaS completa y moderna construida con Next.js 14, TypeScript, Supabase y MercadoPago. Incluye autenticación, facturación, gestión de usuarios y una interfaz de usuario coherente y profesional.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+## 🚀 Características Principales
 
-## Features
+### 🔐 Autenticación Completa
+- Registro de usuarios con validación
+- Inicio de sesión seguro
+- Recuperación de contraseña
+- Gestión de sesiones con Supabase
+- Middleware de protección de rutas
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- **MercadoPago Integration** with Checkout Pro for payment processing
-- Subscription management with automatic webhook handling
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+### 💳 Sistema de Facturación
+- Integración completa con MercadoPago
+- Planes de suscripción configurables
+- Procesamiento de pagos en tiempo real
+- Webhooks para actualizaciones automáticas
+- Gestión de suscripciones
 
-## Demo
+### 👤 Panel de Usuario
+- Dashboard personalizado con estadísticas
+- Configuración de perfil
+- Gestión de seguridad
+- Navegación intuitiva con sidebar
+- Breadcrumbs para mejor UX
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+### 🎨 Interfaz Moderna
+- Diseño responsive y accesible
+- Tema claro/oscuro
+- Componentes UI reutilizables
+- Navegación coherente
+- Experiencia de usuario fluida
 
-## Deploy to Vercel
+## 🛠️ Stack Tecnológico
 
-Vercel deployment will guide you through creating a Supabase account and project.
+- **Frontend**: Next.js 14, TypeScript, Tailwind CSS
+- **Backend**: Supabase (Auth, Database, Storage)
+- **Pagos**: MercadoPago
+- **UI**: Shadcn/ui, Lucide Icons
+- **Deployment**: Vercel
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+## 📁 Estructura del Proyecto
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+```
+saas-boilerplate/
+├── app/                    # App Router de Next.js
+│   ├── api/               # API Routes
+│   │   ├── payments/      # Endpoints de MercadoPago
+│   │   └── subscriptions/ # Gestión de suscripciones
+│   ├── auth/              # Páginas de autenticación
+│   ├── protected/         # Rutas protegidas
+│   │   ├── billing/       # Gestión de facturación
+│   │   └── settings/      # Configuración de usuario
+│   └── layout.tsx         # Layout principal
+├── components/            # Componentes reutilizables
+│   ├── ui/               # Componentes base (shadcn/ui)
+│   ├── auth/             # Componentes de autenticación
+│   ├── billing/          # Componentes de facturación
+│   └── settings/         # Componentes de configuración
+├── lib/                  # Utilidades y configuraciones
+│   ├── supabase/         # Cliente y middleware de Supabase
+│   ├── mercadopago/      # Configuración de MercadoPago
+│   └── utils.ts          # Utilidades generales
+└── middleware.ts         # Middleware de autenticación
+```
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+## 🚀 Inicio Rápido
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+### Prerrequisitos
 
-## Clone and run locally
+- Node.js 18+ 
+- npm o yarn
+- Cuenta de Supabase
+- Cuenta de MercadoPago
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+### Instalación
 
-2. Create a Next.js app using the Supabase Starter template npx command
-
+1. **Clonar el repositorio**
    ```bash
-   npx create-next-app --example with-supabase with-supabase-app
+   git clone https://github.com/tu-usuario/saas-boilerplate.git
+   cd saas-boilerplate
    ```
 
+2. **Instalar dependencias**
    ```bash
-   yarn create next-app --example with-supabase with-supabase-app
+   npm install
    ```
 
+3. **Configurar variables de entorno**
    ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
+   cp .env.example .env.local
    ```
 
-3. Use `cd` to change into the app's directory
+4. **Configurar Supabase**
+   - Crear proyecto en [Supabase](https://supabase.com)
+   - Configurar autenticación
+   - Obtener URL y anon key
 
-   ```bash
-   cd with-supabase-app
-   ```
+5. **Configurar MercadoPago**
+   - Crear cuenta en [MercadoPago](https://mercadopago.com)
+   - Obtener Access Token
+   - Configurar webhooks
 
-4. Rename `.env.example` to `.env.local` and update the following:
-
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=[INSERT SUPABASE PROJECT API ANON KEY]
-   
-   # MercadoPago Configuration (optional)
-   MERCADOPAGO_ACCESS_TOKEN=your_mercadopago_access_token_here
-   NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=your_mercadopago_public_key_here
-   MERCADOPAGO_WEBHOOK_SECRET=your_webhook_secret_here
-   NEXT_PUBLIC_SITE_URL=http://localhost:3000
-   ```
-
-   Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
-
-5. You can now run the Next.js local development server:
-
+6. **Ejecutar el proyecto**
    ```bash
    npm run dev
    ```
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
+## 🔧 Configuración
 
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
+### Variables de Entorno
 
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=tu-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key
 
-## MercadoPago Integration
+# MercadoPago
+MERCADOPAGO_ACCESS_TOKEN=tu-access-token
+MERCADOPAGO_WEBHOOK_SECRET=tu-webhook-secret
 
-This boilerplate includes a simplified MercadoPago integration with Checkout Pro, following Ignacio Soler's guide pattern. See [MERCADOPAGO_SETUP.md](./MERCADOPAGO_SETUP.md) for detailed setup instructions.
+# Next.js
+NEXTAUTH_SECRET=tu-nextauth-secret
+NEXTAUTH_URL=http://localhost:3000
+```
 
-### Quick Start for Payments:
-1. Configure your MercadoPago credentials in `.env.local`
-2. Navigate to `/protected/billing` to test the payment flow
-3. Use test cards for development (see setup guide)
-4. Enjoy the simplified flow: Plan Selection → MercadoPago → Return
+### Configuración de Supabase
 
-## Feedback and issues
+1. Crear las tablas necesarias en Supabase
+2. Configurar políticas de seguridad
+3. Habilitar autenticación por email
+4. Configurar templates de email
 
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
+### Configuración de MercadoPago
 
-## More Supabase examples
+1. Crear preferencias de pago
+2. Configurar webhooks
+3. Establecer planes de suscripción
+4. Configurar notificaciones
 
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+## 📱 Características de UX/UI
+
+### Navegación Coherente
+- Sidebar responsive para navegación principal
+- Breadcrumbs para orientación del usuario
+- Navegación móvil optimizada
+- Estados de carga y error consistentes
+
+### Componentes Reutilizables
+- `PageHeader`: Header consistente con breadcrumbs
+- `StatsCard`: Tarjetas de estadísticas
+- `Sidebar`: Navegación lateral
+- `Breadcrumb`: Navegación de migas de pan
+
+### Diseño Responsive
+- Mobile-first approach
+- Breakpoints optimizados
+- Touch-friendly interfaces
+- Accesibilidad mejorada
+
+## 🔒 Seguridad
+
+- Autenticación con Supabase Auth
+- Middleware de protección de rutas
+- Validación de datos en cliente y servidor
+- Sanitización de inputs
+- HTTPS obligatorio en producción
+
+## 📊 Monitoreo y Analytics
+
+- Logs de autenticación
+- Tracking de pagos
+- Métricas de uso
+- Alertas de errores
+
+## 🚀 Deployment
+
+### Vercel (Recomendado)
+
+1. Conectar repositorio a Vercel
+2. Configurar variables de entorno
+3. Deploy automático en push
+
+### Otros Proveedores
+
+- Netlify
+- Railway
+- DigitalOcean App Platform
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crear rama feature (`git checkout -b feature/AmazingFeature`)
+3. Commit cambios (`git commit -m 'Add AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abrir Pull Request
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
+
+## 🆘 Soporte
+
+- 📧 Email: soporte@saas-boilerplate.com
+- 💬 Discord: [SaaS Boilerplate Community](https://discord.gg/saas-boilerplate)
+- 📖 Documentación: [docs.saas-boilerplate.com](https://docs.saas-boilerplate.com)
+
+## 🙏 Agradecimientos
+
+- [Supabase](https://supabase.com) por la infraestructura backend
+- [MercadoPago](https://mercadopago.com) por la pasarela de pagos
+- [Vercel](https://vercel.com) por el hosting y deployment
+- [Shadcn/ui](https://ui.shadcn.com) por los componentes UI
+- [Next.js](https://nextjs.org) por el framework
+
+---
+
+**Desarrollado con ❤️ para la comunidad de desarrolladores SaaS**

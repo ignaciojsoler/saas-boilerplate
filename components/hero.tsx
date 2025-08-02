@@ -1,44 +1,87 @@
-import { NextLogo } from "./next-logo";
-import { SupabaseLogo } from "./supabase-logo";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { CheckCircle, Zap, Shield, CreditCard } from "lucide-react";
+import Link from "next/link";
 
 export function Hero() {
+  const features = [
+    {
+      icon: Shield,
+      title: "Autenticación Segura",
+      description: "Sistema de autenticación robusto con Supabase"
+    },
+    {
+      icon: CreditCard,
+      title: "Pagos Integrados",
+      description: "Procesamiento de pagos con MercadoPago"
+    },
+    {
+      icon: Zap,
+      title: "Rápido y Moderno",
+      description: "Construido con Next.js 14 y TypeScript"
+    }
+  ];
+
   return (
     <div className="flex flex-col gap-16 items-center">
-      <div className="flex gap-8 justify-center items-center">
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <SupabaseLogo />
-        </a>
-        <span className="border-l rotate-45 h-6" />
-        <a href="https://nextjs.org/" target="_blank" rel="noreferrer">
-          <NextLogo />
-        </a>
+      {/* Header principal */}
+      <div className="text-center space-y-6">
+        <h1 className="text-4xl lg:text-6xl font-bold tracking-tight">
+          Plataforma SaaS
+          <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            Completa
+          </span>
+        </h1>
+        <p className="text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+          Todo lo que necesitas para construir tu aplicación SaaS. 
+          Autenticación, facturación, gestión de usuarios y más.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button asChild size="lg" className="text-lg px-8 py-6">
+            <Link href="/auth/sign-up">
+              Comenzar Gratis
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="lg" className="text-lg px-8 py-6">
+            <Link href="/protected">
+              Ver Demo
+            </Link>
+          </Button>
+        </div>
       </div>
-      <h1 className="sr-only">Supabase and Next.js Starter Template</h1>
-      <p className="text-3xl lg:text-4xl !leading-tight mx-auto max-w-xl text-center">
-        The fastest way to build apps with{" "}
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Supabase
-        </a>{" "}
-        and{" "}
-        <a
-          href="https://nextjs.org/"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Next.js
-        </a>
-      </p>
-      <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
+
+      {/* Features */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+        {features.map((feature, index) => (
+          <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+            <CardContent className="p-6 text-center">
+              <feature.icon className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+              <p className="text-muted-foreground">{feature.description}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-8 w-full max-w-4xl">
+        <div className="text-center">
+          <div className="text-3xl font-bold text-blue-600">100%</div>
+          <div className="text-sm text-muted-foreground">Seguro</div>
+        </div>
+        <div className="text-center">
+          <div className="text-3xl font-bold text-purple-600">24/7</div>
+          <div className="text-sm text-muted-foreground">Soporte</div>
+        </div>
+        <div className="text-center">
+          <div className="text-3xl font-bold text-green-600">99.9%</div>
+          <div className="text-sm text-muted-foreground">Uptime</div>
+        </div>
+        <div className="text-center">
+          <div className="text-3xl font-bold text-orange-600">∞</div>
+          <div className="text-sm text-muted-foreground">Escalable</div>
+        </div>
+      </div>
     </div>
   );
 }

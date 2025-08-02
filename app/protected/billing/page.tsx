@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
@@ -11,13 +10,14 @@ import { PricingCard } from '@/components/billing/pricing-card';
 import { SimpleCheckout } from '@/components/billing/simple-checkout';
 import { SUBSCRIPTION_PLANS, formatCurrency } from '@/lib/mercadopago/utils';
 import { SubscriptionPlan } from '@/lib/mercadopago/types';
+import { PageHeader } from '@/components/ui/page-header';
 
 export default function BillingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [currentSubscription, setCurrentSubscription] = useState<any>(null);
 
   const status = searchParams.get('status');
@@ -44,7 +44,7 @@ export default function BillingPage() {
     setShowCheckout(true);
   };
 
-  const handlePaymentSuccess = (paymentData: any) => {
+  const handlePaymentSuccess = () => {
     setShowCheckout(false);
     setSelectedPlan(null);
     fetchCurrentSubscription();
@@ -63,13 +63,16 @@ export default function BillingPage() {
   };
 
   return (
-    <div className="flex-1 w-full flex flex-col gap-8">
-      <div className="w-full">
-        <h1 className="text-3xl font-bold mb-2">Planes y Facturación</h1>
-        <p className="text-muted-foreground">
-          Elige el plan que mejor se adapte a tus necesidades
-        </p>
-      </div>
+    <div className="space-y-8">
+      {/* Page Header */}
+      <PageHeader
+        title="Planes y Facturación"
+        description="Elige el plan que mejor se adapte a tus necesidades"
+        breadcrumbItems={[
+          { label: "Dashboard", href: "/protected" },
+          { label: "Facturación" }
+        ]}
+      />
 
       {/* Alertas de estado */}
       {status === 'success' && (
@@ -128,16 +131,24 @@ export default function BillingPage() {
       )}
 
       {/* Planes de precios */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {SUBSCRIPTION_PLANS.map((plan, index) => (
-          <PricingCard
-            key={plan.id}
-            plan={plan}
-            isPopular={plan.id === 'pro'}
-            onSelect={handlePlanSelect}
-            isLoading={isLoading}
-          />
-        ))}
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-semibold mb-4">Planes Disponibles</h2>
+          <p className="text-muted-foreground">
+            Selecciona el plan que mejor se adapte a tus necesidades
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {SUBSCRIPTION_PLANS.map((plan) => (
+            <PricingCard
+              key={plan.id}
+              plan={plan}
+              isPopular={plan.id === 'pro'}
+              onSelect={handlePlanSelect}
+              isLoading={isLoading}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Información adicional */}

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileSettings } from "@/components/settings/profile-settings";
 import { SecuritySettings } from "@/components/settings/security-settings";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -13,13 +14,16 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="flex-1 w-full flex flex-col gap-6">
-      <div className="w-full">
-        <h1 className="text-3xl font-bold">Configuración de cuenta</h1>
-        <p className="text-muted-foreground mt-2">
-          Gestiona tu perfil, seguridad y preferencias
-        </p>
-      </div>
+    <div className="space-y-6">
+      {/* Page Header */}
+      <PageHeader
+        title="Configuración de cuenta"
+        description="Gestiona tu perfil, seguridad y preferencias"
+        breadcrumbItems={[
+          { label: "Dashboard", href: "/protected" },
+          { label: "Configuración" }
+        ]}
+      />
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
