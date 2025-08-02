@@ -4,7 +4,7 @@ import { cancelSubscription, getUserSubscription } from '@/lib/supabase/subscrip
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -16,7 +16,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const subscriptionId = params.id;
+    const { id: subscriptionId } = await params;
 
     // Verificar que la suscripción pertenece al usuario
     const userSubscription = await getUserSubscription(user.id);

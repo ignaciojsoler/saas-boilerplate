@@ -26,7 +26,7 @@ export interface UserSubscription {
   trial_start: string | null;
   trial_end: string | null;
   cancelled_at: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -48,7 +48,7 @@ export interface WebhookEvent {
   id: string;
   mercadopago_id: string;
   event_type: string;
-  event_data: Record<string, any>;
+  event_data: Record<string, unknown>;
   processed: boolean;
   processed_at: string | null;
   created_at: string;
@@ -73,7 +73,7 @@ export interface CreateSubscriptionData {
   currency?: string;
   current_period_start: string;
   current_period_end: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface UpdateSubscriptionData {
@@ -81,5 +81,5 @@ export interface UpdateSubscriptionData {
   current_period_start?: string;
   current_period_end?: string;
   cancelled_at?: string | null;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 } 

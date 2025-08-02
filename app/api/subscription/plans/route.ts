@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getSubscriptionPlans } from '@/lib/supabase/subscriptions';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Obtener todos los planes de suscripción
     const plans = await getSubscriptionPlans();

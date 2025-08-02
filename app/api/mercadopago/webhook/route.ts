@@ -4,8 +4,9 @@ import {
   createSubscription, 
   updateSubscription, 
   getSubscriptionByMercadoPagoId,
-  createSubscriptionPayment 
+  createSubscriptionPayment
 } from '@/lib/supabase/subscriptions';
+import { WebhookData } from '@/lib/mercadopago/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handleSubscriptionPreapproval(body: any) {
+async function handleSubscriptionPreapproval(body: WebhookData) {
   const subscriptionData = body.data;
   
   if (!subscriptionData) {
@@ -70,7 +71,7 @@ async function handleSubscriptionPreapproval(body: any) {
   const planId = external_reference?.split('_')[0] || 'basic';
 
   // Buscar el usuario por email en auth.users
-  const { data: user, error: userError } = await supabase.auth.admin.listUsers();
+  const { data: user } = await supabase.auth.admin.listUsers();
   
   const targetUser = user.users.find(u => u.email === payer_email);
   
@@ -82,7 +83,7 @@ async function handleSubscriptionPreapproval(body: any) {
   const userId = targetUser.id;
 
   // Verificar si ya existe una suscripción con este ID de MercadoPago
-  const existingSubscription = await getSubscriptionByMercadoPagoId(mercadopago_id);
+  const existingSubscription = await getSubscriptionByMercadoPagoId(mercadopago_id.toString());
   
   if (existingSubscription) {
     // Actualizar suscripción existente
@@ -108,7 +109,7 @@ async function handleSubscriptionPreapproval(body: any) {
     const subscriptionData = {
       user_id: userId,
       plan_id: planId,
-      mercadopago_id: mercadopago_id,
+      mercadopago_id: mercadopago_id.toString(),
       amount: auto_recurring?.transaction_amount || 0,
       currency: auto_recurring?.currency_id || 'ARS',
       current_period_start: new Date().toISOString(),
@@ -131,7 +132,7 @@ async function handleSubscriptionPreapproval(body: any) {
   return NextResponse.json({ status: 'success' });
 }
 
-async function handlePayment(body: any) {
+async function handlePayment(body: WebhookData) {
   const paymentData = body.data;
   
   if (!paymentData) {
@@ -139,7 +140,7 @@ async function handlePayment(body: any) {
   }
 
   // Buscar la suscripción relacionada con este pago
-  const subscription = await getSubscriptionByMercadoPagoId(paymentData.subscription_id);
+  const subscription = await getSubscriptionByMercadoPagoId(paymentData.subscription_id?.toString() || '');
   
   if (!subscription) {
     console.log('No subscription found for payment:', paymentData.id);
@@ -150,8 +151,8 @@ async function handlePayment(body: any) {
   await createSubscriptionPayment({
     subscription_id: subscription.id,
     mercadopago_payment_id: paymentData.id.toString(),
-    amount: paymentData.transaction_amount,
-    currency: paymentData.currency_id,
+    amount: paymentData.transaction_amount || 0,
+    currency: paymentData.currency_id || 'ARS',
     status: mapPaymentStatus(paymentData.status),
     payment_method: paymentData.payment_method?.type,
     payment_type: paymentData.payment_type_id
@@ -161,7 +162,7 @@ async function handlePayment(body: any) {
   return NextResponse.json({ status: 'success' });
 }
 
-async function handleSubscriptionPayment(body: any) {
+async function handleSubscriptionPayment(body: WebhookData) {
   const paymentData = body.data;
   
   if (!paymentData) {
@@ -169,7 +170,7 @@ async function handleSubscriptionPayment(body: any) {
   }
 
   // Buscar la suscripción relacionada
-  const subscription = await getSubscriptionByMercadoPagoId(paymentData.subscription_id);
+  const subscription = await getSubscriptionByMercadoPagoId(paymentData.subscription_id?.toString() || '');
   
   if (!subscription) {
     console.log('No subscription found for payment:', paymentData.id);
@@ -180,8 +181,8 @@ async function handleSubscriptionPayment(body: any) {
   await createSubscriptionPayment({
     subscription_id: subscription.id,
     mercadopago_payment_id: paymentData.id.toString(),
-    amount: paymentData.transaction_amount,
-    currency: paymentData.currency_id,
+    amount: paymentData.transaction_amount || 0,
+    currency: paymentData.currency_id || 'ARS',
     status: mapPaymentStatus(paymentData.status),
     payment_method: paymentData.payment_method?.type,
     payment_type: paymentData.payment_type_id

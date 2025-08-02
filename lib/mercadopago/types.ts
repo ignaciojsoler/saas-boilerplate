@@ -57,10 +57,23 @@ export interface WebhookData {
     status: string;
     external_reference: string;
     payer_email?: string;
+    reason?: string;
+    back_url?: string;
+    collector_id?: number;
+    application_id?: number;
+    init_point?: string;
+    sandbox_init_point?: string;
     auto_recurring?: {
       transaction_amount: number;
       currency_id: string;
     };
+    subscription_id?: string;
+    payment_method?: {
+      type: string;
+    };
+    payment_type_id?: string;
+    transaction_amount?: number;
+    currency_id?: string;
   };
 }
 

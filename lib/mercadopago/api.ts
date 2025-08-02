@@ -1,5 +1,14 @@
 import { MercadoPagoConfig, PreApproval } from "mercadopago";
 
+interface SubscriptionPlan {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  interval: 'monthly' | 'yearly';
+  features: string[];
+}
+
 export const mercadopago = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
 });
@@ -18,7 +27,7 @@ export const mercadopagoApi = {
       throw new Error('Failed to fetch plans');
     }
     const data = await response.json();
-    const plan = data.plans?.find((p: any) => p.id === planId);
+    const plan = data.plans?.find((p: SubscriptionPlan) => p.id === planId);
     
     console.log('📋 Plan encontrado:', plan);
     
@@ -76,7 +85,7 @@ export const mercadopagoApi = {
       return null;
     }
     const data = await response.json();
-    return data.plans?.find((p: any) => p.id === planId);
+    return data.plans?.find((p: SubscriptionPlan) => p.id === planId);
   },
 
   // Obtener todos los planes desde la API
