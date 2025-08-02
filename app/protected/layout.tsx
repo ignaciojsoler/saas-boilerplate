@@ -2,6 +2,7 @@ import { DeployButton } from "@/components/deploy-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { LogoutButton } from "@/components/logout-button";
 import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 
@@ -20,6 +21,15 @@ export default function ProtectedLayout({
               <div className="flex items-center gap-2">
                 <DeployButton />
               </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <Link 
+                href="/protected/settings" 
+                className="text-sm hover:text-foreground/80 transition-colors"
+              >
+                Configuración
+              </Link>
+              <LogoutButton />
             </div>
             {!hasEnvVars ? <EnvVarWarning /> : <AuthButton />}
           </div>
