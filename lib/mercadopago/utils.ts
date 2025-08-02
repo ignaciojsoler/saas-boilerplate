@@ -2,7 +2,7 @@ import { preference, payment } from './client';
 import { SubscriptionPlan, CreatePaymentRequest, MercadoPagoPlan } from './types';
 
 // Importar la API de MercadoPago
-import mercadopagoApi from '@/app/api/mercadopago/route';
+import { mercadopagoApi } from './api';
 
 export const SUBSCRIPTION_PLANS: MercadoPagoPlan[] = [
   {

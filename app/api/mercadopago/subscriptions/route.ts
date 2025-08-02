@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   // Agregar headers de CORS
   const response = NextResponse.next();
   response.headers.set('Access-Control-Allow-Origin', '*');
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Manejar OPTIONS para CORS preflight
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {

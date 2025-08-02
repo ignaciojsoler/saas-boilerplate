@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import api from "@/app/api/mercadopago/route";
+import { mercadopagoApi } from "@/lib/mercadopago/api";
 
 export default function SuscripcionesPage() {
   async function suscribe(formData: FormData) {
@@ -12,7 +12,7 @@ export default function SuscripcionesPage() {
       throw new Error("Email requerido");
     }
 
-    const url = await api.suscribe(email);
+    const url = await mercadopagoApi.suscribe(email);
 
     redirect(url);
   }
