@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mercadopagoApi, SUBSCRIPTION_PLANS } from "@/lib/mercadopago/api";
+import { mercadopagoApi } from "@/lib/mercadopago/api";
+import { getSubscriptionPlan } from "@/lib/supabase/subscriptions";
 
 // Endpoint para crear suscripciones
 export async function POST(request: NextRequest) {
@@ -18,8 +19,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email requerido' }, { status: 400 });
     }
 
-    // Verificar que el plan existe
-    const plan = SUBSCRIPTION_PLANS[planId as keyof typeof SUBSCRIPTION_PLANS];
+    // Verificar que el plan existe en la base de datos
+    const plan = await getSubscriptionPlan(planId);
     if (!plan) {
       console.log('❌ Error: Plan no válido:', planId);
       return NextResponse.json({ error: `Plan no válido: ${planId}` }, { status: 400 });

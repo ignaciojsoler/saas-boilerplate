@@ -4,45 +4,7 @@ export const mercadopago = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
 });
 
-// Definir los planes disponibles
-export const SUBSCRIPTION_PLANS = {
-  basic: {
-    id: 'basic',
-    name: 'Plan Básico',
-    price: 1000, // 1000 ARS = $10 USD aprox
-    currency: 'ARS',
-    features: [
-      'Acceso básico a la plataforma',
-      'Soporte por email',
-      '1 proyecto activo'
-    ]
-  },
-  pro: {
-    id: 'pro',
-    name: 'Plan Profesional',
-    price: 3000, // 3000 ARS = $30 USD aprox
-    currency: 'ARS',
-    features: [
-      'Todo del plan básico',
-      'Soporte prioritario',
-      '5 proyectos activos',
-      'Análisis avanzado'
-    ]
-  },
-  enterprise: {
-    id: 'enterprise',
-    name: 'Plan Empresarial',
-    price: 10000, // 10000 ARS = $100 USD aprox
-    currency: 'ARS',
-    features: [
-      'Todo del plan profesional',
-      'Soporte 24/7',
-      'Proyectos ilimitados',
-      'API personalizada',
-      'Integración dedicada'
-    ]
-  }
-};
+
 
 export const mercadopagoApi = {
   async suscribe(email: string, planId: string = 'basic'): Promise<string> {
@@ -50,7 +12,14 @@ export const mercadopagoApi = {
     console.log('📧 Email recibido:', email);
     console.log('📋 Plan ID recibido:', planId);
     
-    const plan = SUBSCRIPTION_PLANS[planId as keyof typeof SUBSCRIPTION_PLANS];
+    // Obtener el plan desde la base de datos
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/subscription/plans`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch plans');
+    }
+    const data = await response.json();
+    const plan = data.plans?.find((p: any) => p.id === planId);
+    
     console.log('📋 Plan encontrado:', plan);
     
     if (!plan) {
@@ -66,7 +35,7 @@ export const mercadopagoApi = {
       console.log('🔄 Creando PreApproval con MercadoPago...');
       const suscription = await new PreApproval(mercadopago).create({
         body: {
-          back_url: process.env.NEXT_PUBLIC_SITE_URL!,
+          back_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/mercadopago/success`,
           reason: `Suscripción ${plan.name}`,
           auto_recurring: {
             frequency: 1,
@@ -100,13 +69,23 @@ export const mercadopagoApi = {
     }
   },
 
-  // Obtener información de un plan
-  getPlan(planId: string) {
-    return SUBSCRIPTION_PLANS[planId as keyof typeof SUBSCRIPTION_PLANS];
+  // Obtener información de un plan desde la API
+  async getPlan(planId: string) {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/subscription/plans`);
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    return data.plans?.find((p: any) => p.id === planId);
   },
 
-  // Obtener todos los planes
-  getAllPlans() {
-    return Object.values(SUBSCRIPTION_PLANS);
+  // Obtener todos los planes desde la API
+  async getAllPlans() {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/subscription/plans`);
+    if (!response.ok) {
+      return [];
+    }
+    const data = await response.json();
+    return data.plans || [];
   }
 }; 
