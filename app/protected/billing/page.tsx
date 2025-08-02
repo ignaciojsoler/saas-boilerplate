@@ -2,37 +2,44 @@
 
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { PricingCard } from '@/components/billing/pricing-card';
 import { SimpleCheckout } from '@/components/billing/simple-checkout';
-import { SUBSCRIPTION_PLANS, formatCurrency } from '@/lib/mercadopago/utils';
-import { MercadoPagoPlan } from '@/lib/mercadopago/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatusAlert } from '@/components/ui/status-alert';
 import { PAYMENT_METHODS, REFUND_POLICY } from '@/lib/constants';
-import { useSubscription } from '@/hooks/use-subscription';
+import { useUserSubscription } from '@/hooks/use-user-subscription';
 import { useUser } from '@/hooks/use-user';
+import { useSubscriptionPlans } from '@/hooks/use-subscription-plans';
 import { InfoCard, InfoSection } from '@/components/ui/info-section';
+import { SubscriptionStatus } from '@/components/billing/subscription-status';
+import { SubscriptionPlan } from '@/lib/supabase/types';
 
 function BillingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedPlan, setSelectedPlan] = useState<MercadoPagoPlan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { currentSubscription, refetch } = useSubscription();
+  const { 
+    subscription, 
+    refetch
+  } = useUserSubscription();
   const { 
     email, 
     isLoading: userLoading } = useUser();
+  const {
+    plans,
+    isLoading: plansLoading,
+    error: plansError
+  } = useSubscriptionPlans();
 
     // Para pruebas
     // const email = 'test_user_339185047@testuser.com';
 
   const status = searchParams.get('status') as 'success' | 'error' | 'pending' | null;
 
-  const handlePlanSelect = async (plan: MercadoPagoPlan) => {
+  const handlePlanSelect = async (plan: SubscriptionPlan) => {
     if (!email) {
       console.log('❌ Error: Usuario no autenticado');
       router.push(`/protected/billing?status=error&message=${encodeURIComponent('Usuario no autenticado')}`);
@@ -108,13 +115,24 @@ function BillingContent() {
     setSelectedPlan(null);
   };
 
-  // Mostrar loading mientras se carga la información del usuario
-  if (userLoading) {
+  // Mostrar loading mientras se carga la información del usuario o los planes
+  if (userLoading || plansLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
           <p className="mt-2 text-sm text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar error si hay problemas cargando los planes
+  if (plansError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600">Error al cargar los planes: {plansError}</p>
         </div>
       </div>
     );
@@ -134,32 +152,14 @@ function BillingContent() {
       <StatusAlert status={status} />
 
       {/* Suscripción actual */}
-      {currentSubscription && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Suscripción Actual</CardTitle>
-            <CardDescription>
-              Detalles de tu suscripción activa
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold">{currentSubscription.plan_name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {formatCurrency(currentSubscription.amount, currentSubscription.currency)} / mes
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Vence: {new Date(currentSubscription.current_period_end).toLocaleDateString()}
-                </p>
-              </div>
-              <Badge variant={currentSubscription.status === 'active' ? 'default' : 'secondary'}>
-                {currentSubscription.status === 'active' ? 'Activa' : 'Inactiva'}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <SubscriptionStatus 
+        subscription={subscription} 
+        onCancel={() => {
+          // TODO: Implementar cancelación de suscripción
+          console.log('Cancelar suscripción');
+        }}
+        isLoading={isLoading}
+      />
 
       {/* Planes de precios */}
       <div className="space-y-6">
@@ -170,7 +170,7 @@ function BillingContent() {
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SUBSCRIPTION_PLANS.map((plan) => (
+          {plans.map((plan) => (
             <PricingCard
               key={plan.id}
               plan={plan}

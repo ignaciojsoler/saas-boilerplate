@@ -1,47 +1,11 @@
 import { preference, payment } from './client';
-import { SubscriptionPlan, CreatePaymentRequest, MercadoPagoPlan } from './types';
+import { CreatePaymentRequest } from './types';
+import { SubscriptionPlan } from '@/lib/supabase/types';
 
 // Importar la API de MercadoPago
 import { mercadopagoApi } from './api';
 
-export const SUBSCRIPTION_PLANS: MercadoPagoPlan[] = [
-  {
-    id: 'basic',
-    name: 'Plan Básico',
-    price: 1000, // 1000 ARS = $10 USD aprox
-    currency: 'ARS',
-    features: [
-      'Acceso básico a la plataforma',
-      'Soporte por email',
-      '1 proyecto activo'
-    ]
-  },
-  {
-    id: 'pro',
-    name: 'Plan Profesional',
-    price: 3000, // 3000 ARS = $30 USD aprox
-    currency: 'ARS',
-    features: [
-      'Todo del plan básico',
-      'Soporte prioritario',
-      '5 proyectos activos',
-      'Análisis avanzado'
-    ]
-  },
-  {
-    id: 'enterprise',
-    name: 'Plan Empresarial',
-    price: 10000, // 10000 ARS = $100 USD aprox
-    currency: 'ARS',
-    features: [
-      'Todo del plan profesional',
-      'Soporte 24/7',
-      'Proyectos ilimitados',
-      'API personalizada',
-      'Integración dedicada'
-    ]
-  }
-];
+
 
 // Función para crear suscripción usando MercadoPago
 export async function createSubscription(email: string, planId: string): Promise<string> {
@@ -53,14 +17,40 @@ export async function createSubscription(email: string, planId: string): Promise
   }
 }
 
-// Función para obtener un plan específico
-export function getPlan(planId: string): MercadoPagoPlan | undefined {
-  return SUBSCRIPTION_PLANS.find(plan => plan.id === planId);
+// Función para obtener un plan específico desde la API
+export async function getPlan(planId: string): Promise<SubscriptionPlan | undefined> {
+  try {
+    const response = await fetch('/api/subscription/plans');
+    if (!response.ok) {
+      throw new Error('Failed to fetch plans');
+    }
+    const data = await response.json();
+    if (data.success && data.plans) {
+      return data.plans.find((plan: SubscriptionPlan) => plan.id === planId);
+    }
+    return undefined;
+  } catch (error) {
+    console.error('Error fetching plan:', error);
+    return undefined;
+  }
 }
 
-// Función para obtener todos los planes
-export function getAllPlans(): MercadoPagoPlan[] {
-  return SUBSCRIPTION_PLANS;
+// Función para obtener todos los planes desde la API
+export async function getAllPlans(): Promise<SubscriptionPlan[]> {
+  try {
+    const response = await fetch('/api/subscription/plans');
+    if (!response.ok) {
+      throw new Error('Failed to fetch plans');
+    }
+    const data = await response.json();
+    if (data.success && data.plans) {
+      return data.plans;
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching plans:', error);
+    return [];
+  }
 }
 
 // Función simplificada siguiendo la guía de Ignacio

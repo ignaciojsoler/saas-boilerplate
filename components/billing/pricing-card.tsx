@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Star } from 'lucide-react';
 import { formatCurrency } from '@/lib/mercadopago/utils';
-import { MercadoPagoPlan } from '@/lib/mercadopago/types';
+import { SubscriptionPlan } from '@/lib/supabase/types';
 
 interface PricingCardProps {
-  plan: MercadoPagoPlan;
+  plan: SubscriptionPlan;
   isPopular?: boolean;
-  onSelect: (plan: MercadoPagoPlan) => void;
+  onSelect: (plan: SubscriptionPlan) => void;
   isLoading?: boolean;
 }
 
