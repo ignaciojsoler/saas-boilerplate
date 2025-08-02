@@ -14,10 +14,12 @@ interface FormFieldProps {
   error?: string | null;
   className?: string;
   rightElement?: React.ReactNode;
+  name?: string;
+  disabled?: boolean;
 }
 
 export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
-  ({ id, label, type = "text", placeholder, required = false, value, onChange, error, className, rightElement }, ref) => {
+  ({ id, label, type = "text", placeholder, required = false, value, onChange, error, className, rightElement, name, disabled }, ref) => {
     return (
       <div className={cn("grid gap-2", className)}>
         <div className="flex items-center justify-between">
@@ -27,11 +29,13 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
         <Input
           ref={ref}
           id={id}
+          name={name}
           type={type}
           placeholder={placeholder}
           required={required}
           value={value}
           onChange={onChange}
+          disabled={disabled}
           className={error ? "border-red-500" : ""}
         />
         {error && <p className="text-sm text-red-500">{error}</p>}
