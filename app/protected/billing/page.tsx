@@ -7,27 +7,87 @@ import { Badge } from '@/components/ui/badge';
 import { PricingCard } from '@/components/billing/pricing-card';
 import { SimpleCheckout } from '@/components/billing/simple-checkout';
 import { SUBSCRIPTION_PLANS, formatCurrency } from '@/lib/mercadopago/utils';
-import { SubscriptionPlan } from '@/lib/mercadopago/types';
+import { MercadoPagoPlan } from '@/lib/mercadopago/types';
 import { PageHeader } from '@/components/ui/page-header';
 import { StatusAlert } from '@/components/ui/status-alert';
 import { PAYMENT_METHODS, REFUND_POLICY } from '@/lib/constants';
 import { useSubscription } from '@/hooks/use-subscription';
+import { useUser } from '@/hooks/use-user';
 import { InfoCard, InfoSection } from '@/components/ui/info-section';
 
 function BillingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<MercadoPagoPlan | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   const { currentSubscription, refetch } = useSubscription();
+  const { 
+    email, 
+    isLoading: userLoading } = useUser();
+
+    // Para pruebas
+    // const email = 'test_user_339185047@testuser.com';
 
   const status = searchParams.get('status') as 'success' | 'error' | 'pending' | null;
 
-  const handlePlanSelect = (plan: SubscriptionPlan) => {
+  const handlePlanSelect = async (plan: MercadoPagoPlan) => {
+    if (!email) {
+      console.log('❌ Error: Usuario no autenticado');
+      router.push(`/protected/billing?status=error&message=${encodeURIComponent('Usuario no autenticado')}`);
+      return;
+    }
+
+    console.log('🚀 Iniciando selección de plan');
+    console.log('📧 Email del usuario:', email);
+    console.log('📋 Plan seleccionado:', plan);
+
     setSelectedPlan(plan);
-    setShowCheckout(true);
+    setIsLoading(true);
+    
+    try {
+      const requestBody = {
+        email: email,
+        planId: plan.id
+      };
+      
+      console.log('📤 Enviando request a /api/mercadopago');
+      console.log('📝 Request body:', requestBody);
+      
+      // Usar el endpoint POST en lugar de llamar directamente a la función
+      const response = await fetch('/api/mercadopago', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
+
+      const result = await response.json();
+      console.log('📥 Response body:', result);
+      
+      if (result.success && result.checkoutUrl) {
+        console.log('✅ Éxito - Redirigiendo a:', result.checkoutUrl);
+        // Redirigir al checkout de MercadoPago
+        window.location.href = result.checkoutUrl;
+      } else {
+        console.log('❌ Error en la respuesta:', result.error);
+        throw new Error(result.error || 'Error al crear la suscripción');
+      }
+    } catch (error) {
+      console.error('💥 Error completo:', error);
+      console.error('💥 Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : 'Unknown'
+      });
+      router.push(`/protected/billing?status=error&message=${encodeURIComponent('Error al crear la suscripción')}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePaymentSuccess = () => {
@@ -47,6 +107,18 @@ function BillingContent() {
     setShowCheckout(false);
     setSelectedPlan(null);
   };
+
+  // Mostrar loading mientras se carga la información del usuario
+  if (userLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -75,7 +147,7 @@ function BillingContent() {
               <div>
                 <h3 className="font-semibold">{currentSubscription.plan_name}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {formatCurrency(currentSubscription.amount)} / mes
+                  {formatCurrency(currentSubscription.amount, currentSubscription.currency)} / mes
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Vence: {new Date(currentSubscription.current_period_end).toLocaleDateString()}

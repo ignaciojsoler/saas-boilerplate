@@ -5,12 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Star } from 'lucide-react';
 import { formatCurrency } from '@/lib/mercadopago/utils';
-import { SubscriptionPlan } from '@/lib/mercadopago/types';
+import { MercadoPagoPlan } from '@/lib/mercadopago/types';
 
 interface PricingCardProps {
-  plan: SubscriptionPlan;
+  plan: MercadoPagoPlan;
   isPopular?: boolean;
-  onSelect: (plan: SubscriptionPlan) => void;
+  onSelect: (plan: MercadoPagoPlan) => void;
   isLoading?: boolean;
 }
 
@@ -28,9 +28,9 @@ export function PricingCard({ plan, isPopular = false, onSelect, isLoading = fal
         <CardTitle className="text-xl">{plan.name}</CardTitle>
         <CardDescription>
           <span className="text-3xl font-bold">
-            {formatCurrency(plan.price)}
+            {formatCurrency(plan.price, plan.currency)}
           </span>
-          <span className="text-muted-foreground">/{plan.interval === 'monthly' ? 'mes' : 'año'}</span>
+          <span className="text-muted-foreground">/mes</span>
         </CardDescription>
       </CardHeader>
       

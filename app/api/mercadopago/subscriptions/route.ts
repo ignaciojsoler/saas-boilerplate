@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
-  console.log('GET request received', request);
+  // Agregar headers de CORS
+  const response = NextResponse.next();
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   try {
     const supabase = await createClient();
     
@@ -47,8 +52,8 @@ export async function GET(request: NextRequest) {
       id: subscription.id,
       plan_id: subscription.plan_id,
       plan_name: subscription.plans?.name || 'Plan Desconocido',
-      amount: subscription.plans?.price || 0,
-      currency: subscription.plans?.currency || 'USD',
+      amount: subscription.amount || subscription.plans?.price || 0,
+      currency: subscription.currency || subscription.plans?.currency || 'ARS',
       status: subscription.status,
       current_period_start: subscription.current_period_start,
       current_period_end: subscription.current_period_end,
@@ -65,4 +70,16 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// Manejar OPTIONS para CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 } 

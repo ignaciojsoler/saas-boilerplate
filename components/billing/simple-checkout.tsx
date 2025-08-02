@@ -5,10 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { X, Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/mercadopago/utils';
-import { SubscriptionPlan } from '@/lib/mercadopago/types';
+import { MercadoPagoPlan } from '@/lib/mercadopago/types';
 
 interface SimpleCheckoutProps {
-  selectedPlan: SubscriptionPlan;
+  selectedPlan: MercadoPagoPlan;
   onClose: () => void;
   onSuccess: () => void;
   onError: (error: string) => void;
@@ -65,7 +65,7 @@ export function SimpleCheckout({ selectedPlan, onClose, onError }: SimpleCheckou
             <div>
               <CardTitle>Completar Pago</CardTitle>
               <CardDescription>
-                {selectedPlan.name} - {formatCurrency(selectedPlan.price)}
+                {selectedPlan.name} - {formatCurrency(selectedPlan.price, selectedPlan.currency)}
               </CardDescription>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
@@ -80,8 +80,8 @@ export function SimpleCheckout({ selectedPlan, onClose, onError }: SimpleCheckou
             <h3 className="font-semibold mb-2">Resumen del Plan</h3>
             <div className="space-y-1 text-sm">
               <p><strong>Plan:</strong> {selectedPlan.name}</p>
-              <p><strong>Precio:</strong> {formatCurrency(selectedPlan.price)}</p>
-              <p><strong>Intervalo:</strong> {selectedPlan.interval === 'monthly' ? 'Mensual' : 'Anual'}</p>
+              <p><strong>Precio:</strong> {formatCurrency(selectedPlan.price, selectedPlan.currency)}</p>
+              <p><strong>Intervalo:</strong> Mensual</p>
             </div>
           </div>
 
@@ -112,7 +112,7 @@ export function SimpleCheckout({ selectedPlan, onClose, onError }: SimpleCheckou
               </>
             ) : (
               <>
-                Pagar {formatCurrency(selectedPlan.price)}
+                Pagar {formatCurrency(selectedPlan.price, selectedPlan.currency)}
               </>
             )}
           </Button>

@@ -1,15 +1,8 @@
 import { useState, useEffect } from 'react';
-
-interface Subscription {
-  id: string;
-  plan_name: string;
-  amount: number;
-  status: string;
-  current_period_end: string;
-}
+import { MercadoPagoSubscription } from '@/lib/mercadopago/types';
 
 export function useSubscription() {
-  const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
+  const [currentSubscription, setCurrentSubscription] = useState<MercadoPagoSubscription | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +11,7 @@ export function useSubscription() {
     setError(null);
 
     try {
-      const response = await fetch('/api/subscriptions/current');
+      const response = await fetch('/api/mercadopago/subscriptions');
       if (response.ok) {
         const data = await response.json();
         setCurrentSubscription(data.subscription);

@@ -1,13 +1,15 @@
 import { preference, payment } from './client';
-import { SubscriptionPlan, CreatePaymentRequest } from './types';
+import { SubscriptionPlan, CreatePaymentRequest, MercadoPagoPlan } from './types';
 
-export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
+// Importar la API de MercadoPago
+import mercadopagoApi from '@/app/api/mercadopago/route';
+
+export const SUBSCRIPTION_PLANS: MercadoPagoPlan[] = [
   {
     id: 'basic',
     name: 'Plan Básico',
-    price: 9.99,
-    currency: 'USD',
-    interval: 'monthly',
+    price: 1000, // 1000 ARS = $10 USD aprox
+    currency: 'ARS',
     features: [
       'Acceso básico a la plataforma',
       'Soporte por email',
@@ -17,9 +19,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'pro',
     name: 'Plan Profesional',
-    price: 29.99,
-    currency: 'USD',
-    interval: 'monthly',
+    price: 3000, // 3000 ARS = $30 USD aprox
+    currency: 'ARS',
     features: [
       'Todo del plan básico',
       'Soporte prioritario',
@@ -30,9 +31,8 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'enterprise',
     name: 'Plan Empresarial',
-    price: 99.99,
-    currency: 'USD',
-    interval: 'monthly',
+    price: 10000, // 10000 ARS = $100 USD aprox
+    currency: 'ARS',
     features: [
       'Todo del plan profesional',
       'Soporte 24/7',
@@ -42,6 +42,26 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     ]
   }
 ];
+
+// Función para crear suscripción usando MercadoPago
+export async function createSubscription(email: string, planId: string): Promise<string> {
+  try {
+    return await mercadopagoApi.suscribe(email, planId);
+  } catch (error) {
+    console.error('Error creating subscription:', error);
+    throw new Error('Failed to create subscription');
+  }
+}
+
+// Función para obtener un plan específico
+export function getPlan(planId: string): MercadoPagoPlan | undefined {
+  return SUBSCRIPTION_PLANS.find(plan => plan.id === planId);
+}
+
+// Función para obtener todos los planes
+export function getAllPlans(): MercadoPagoPlan[] {
+  return SUBSCRIPTION_PLANS;
+}
 
 // Función simplificada siguiendo la guía de Ignacio
 export async function createPreference(plan: SubscriptionPlan): Promise<string> {
@@ -82,7 +102,7 @@ export async function createPayment(paymentData: CreatePaymentRequest) {
   }
 }
 
-export function formatCurrency(amount: number, currency: string = 'USD'): string {
+export function formatCurrency(amount: number, currency: string = 'ARS'): string {
   return new Intl.NumberFormat('es-AR', {
     style: 'currency',
     currency: currency
