@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,12 +12,13 @@ import { SUBSCRIPTION_PLANS, formatCurrency } from '@/lib/mercadopago/utils';
 import { SubscriptionPlan } from '@/lib/mercadopago/types';
 import { PageHeader } from '@/components/ui/page-header';
 
-export default function BillingPage() {
+function BillingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [showCheckout, setShowCheckout] = useState(false);
   const [isLoading] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [currentSubscription, setCurrentSubscription] = useState<any>(null);
 
   const status = searchParams.get('status');
@@ -138,7 +139,7 @@ export default function BillingPage() {
             Selecciona el plan que mejor se adapte a tus necesidades
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {SUBSCRIPTION_PLANS.map((plan) => (
             <PricingCard
               key={plan.id}
@@ -190,5 +191,13 @@ export default function BillingPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BillingContent />
+    </Suspense>
   );
 } 

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X, Loader2 } from 'lucide-react';
-import { SubscriptionPlan, formatCurrency } from '@/lib/mercadopago/utils';
+import { formatCurrency } from '@/lib/mercadopago/utils';
+import { SubscriptionPlan } from '@/lib/mercadopago/types';
 
 interface SimpleCheckoutProps {
   selectedPlan: SubscriptionPlan;
@@ -13,7 +14,7 @@ interface SimpleCheckoutProps {
   onError: (error: string) => void;
 }
 
-export function SimpleCheckout({ selectedPlan, onClose, onSuccess, onError }: SimpleCheckoutProps) {
+export function SimpleCheckout({ selectedPlan, onClose, onError }: SimpleCheckoutProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const createPreference = async () => {
@@ -49,6 +50,7 @@ export function SimpleCheckout({ selectedPlan, onClose, onSuccess, onError }: Si
         window.location.href = url;
       }
     } catch (error) {
+      console.error('Error:', error);
       onError('Error al procesar el pago');
     } finally {
       setIsLoading(false);

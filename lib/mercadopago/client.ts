@@ -1,4 +1,4 @@
-import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 
 // Configurar MercadoPago siguiendo la guía de Ignacio
 const client = new MercadoPagoConfig({ 
@@ -8,4 +8,7 @@ const client = new MercadoPagoConfig({
 // Crear instancia de Preference
 const preference = new Preference(client);
 
-export { client, preference }; 
+// Crear instancia de Payment
+const payment = new Payment(client);
+
+export { client, preference, payment }; 

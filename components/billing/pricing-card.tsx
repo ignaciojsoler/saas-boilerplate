@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, Star } from 'lucide-react';
-import { SUBSCRIPTION_PLANS, formatCurrency } from '@/lib/mercadopago/utils';
+import { formatCurrency } from '@/lib/mercadopago/utils';
 import { SubscriptionPlan } from '@/lib/mercadopago/types';
 
 interface PricingCardProps {

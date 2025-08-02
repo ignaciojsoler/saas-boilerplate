@@ -1,5 +1,5 @@
-import { preference } from './client';
-import { SubscriptionPlan } from './types';
+import { preference, payment } from './client';
+import { SubscriptionPlan, CreatePaymentRequest } from './types';
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
@@ -69,6 +69,16 @@ export async function createPreference(plan: SubscriptionPlan): Promise<string> 
   } catch (error) {
     console.error('Error creating preference:', error);
     throw new Error('Failed to create payment preference');
+  }
+}
+
+export async function createPayment(paymentData: CreatePaymentRequest) {
+  try {
+    const paymentResponse = await payment.create({ body: paymentData });
+    return paymentResponse;
+  } catch (error) {
+    console.error('Error creating payment:', error);
+    throw new Error('Failed to create payment');
   }
 }
 

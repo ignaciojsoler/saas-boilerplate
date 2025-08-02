@@ -8,6 +8,24 @@ export interface SubscriptionPlan {
   features: string[];
 }
 
+export interface CreatePaymentRequest {
+  transaction_amount: number;
+  token: string;
+  description: string;
+  payer: {
+    email: string;
+    name?: string;
+  };
+  items: Array<{
+    id: string;
+    title: string;
+    quantity: number;
+    unit_price: number;
+  }>;
+  external_reference?: string;
+  notification_url?: string;
+}
+
 export interface PaymentResult {
   id: number;
   status: string;

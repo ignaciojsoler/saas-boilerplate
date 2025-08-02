@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, Zap, Shield, CreditCard } from "lucide-react";
+import { Zap, Shield, CreditCard } from "lucide-react";
 import Link from "next/link";
 
 export function Hero() {
