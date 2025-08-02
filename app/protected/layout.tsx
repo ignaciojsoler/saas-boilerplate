@@ -24,6 +24,12 @@ export default function ProtectedLayout({
             </div>
             <div className="flex items-center gap-4">
               <Link 
+                href="/protected/billing" 
+                className="text-sm hover:text-foreground/80 transition-colors"
+              >
+                Facturación
+              </Link>
+              <Link 
                 href="/protected/settings" 
                 className="text-sm hover:text-foreground/80 transition-colors"
               >

@@ -30,6 +30,8 @@
 - Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
 - Styling with [Tailwind CSS](https://tailwindcss.com)
 - Components with [shadcn/ui](https://ui.shadcn.com/)
+- **MercadoPago Integration** with Checkout Pro for payment processing
+- Subscription management with automatic webhook handling
 - Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
   - Environment variables automatically assigned to Vercel project
 
@@ -78,6 +80,12 @@ If you wish to just develop locally and not deploy to Vercel, [follow the steps 
    ```
    NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
    NEXT_PUBLIC_SUPABASE_ANON_KEY=[INSERT SUPABASE PROJECT API ANON KEY]
+   
+   # MercadoPago Configuration (optional)
+   MERCADOPAGO_ACCESS_TOKEN=your_mercadopago_access_token_here
+   NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=your_mercadopago_public_key_here
+   MERCADOPAGO_WEBHOOK_SECRET=your_webhook_secret_here
+   NEXT_PUBLIC_SITE_URL=http://localhost:3000
    ```
 
    Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
@@ -93,6 +101,16 @@ If you wish to just develop locally and not deploy to Vercel, [follow the steps 
 6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
 
 > Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+
+## MercadoPago Integration
+
+This boilerplate includes a simplified MercadoPago integration with Checkout Pro, following Ignacio Soler's guide pattern. See [MERCADOPAGO_SETUP.md](./MERCADOPAGO_SETUP.md) for detailed setup instructions.
+
+### Quick Start for Payments:
+1. Configure your MercadoPago credentials in `.env.local`
+2. Navigate to `/protected/billing` to test the payment flow
+3. Use test cards for development (see setup guide)
+4. Enjoy the simplified flow: Plan Selection → MercadoPago → Return
 
 ## Feedback and issues
 
