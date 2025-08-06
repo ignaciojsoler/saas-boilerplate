@@ -16,13 +16,17 @@ export const mercadopago = new MercadoPagoConfig({
 
 
 export const mercadopagoApi = {
-  async suscribe(email: string, planId: string = 'basic'): Promise<string> {
+  async suscribe(email: string, planId: string = 'basic', cookie?: string): Promise<string> {
     console.log('🔍 Función suscribe - Iniciando');
     console.log('📧 Email recibido:', email);
     console.log('📋 Plan ID recibido:', planId);
-    
+    console.log('🍪 Cookie recibida:', cookie);
     // Obtener el plan desde la base de datos
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/subscription/plans`);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/subscription/plans`, {
+      headers: {
+        Cookie: cookie || '',
+      },
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch plans');
     }

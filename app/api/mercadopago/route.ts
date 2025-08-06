@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { mercadopagoApi } from "@/lib/mercadopago/api";
 import { getSubscriptionPlan } from "@/lib/supabase/subscriptions";
-
+import { cookies } from 'next/headers';
 // Endpoint para crear suscripciones
 export async function POST(request: NextRequest) {
   console.log('🚀 POST /api/mercadopago - Iniciando creación de suscripción');
@@ -18,9 +18,10 @@ export async function POST(request: NextRequest) {
       console.log('❌ Error: Email requerido');
       return NextResponse.json({ error: 'Email requerido' }, { status: 400 });
     }
-
+    console.log('llega aca 1');
     // Verificar que el plan existe en la base de datos
     const plan = await getSubscriptionPlan(planId);
+    console.log('llega aca 2');
     if (!plan) {
       console.log('❌ Error: Plan no válido:', planId);
       return NextResponse.json({ error: `Plan no válido: ${planId}` }, { status: 400 });
@@ -39,7 +40,9 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🔄 Creando suscripción con MercadoPago...');
-    const checkoutUrl = await mercadopagoApi.suscribe(email, planId);
+    console.log('llega aca 3');
+    const cookie = (await cookies()).toString();
+    const checkoutUrl = await mercadopagoApi.suscribe(email, planId, cookie);
     console.log('✅ URL de checkout generada:', checkoutUrl);
     
     return NextResponse.json({ 
