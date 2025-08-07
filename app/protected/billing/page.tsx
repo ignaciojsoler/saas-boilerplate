@@ -23,7 +23,9 @@ function BillingContent() {
   
   const { 
     subscription, 
-    refetch
+    refetch,
+    cancelSubscription,
+    isLoading: subscriptionLoading
   } = useUserSubscription();
   const { 
     email, 
@@ -154,11 +156,8 @@ function BillingContent() {
       {/* Suscripción actual */}
       <SubscriptionStatus 
         subscription={subscription} 
-        onCancel={() => {
-          // TODO: Implementar cancelación de suscripción
-          console.log('Cancelar suscripción');
-        }}
-        isLoading={isLoading}
+        onCancel={cancelSubscription}
+        isLoading={isLoading || subscriptionLoading}
       />
 
       {/* Planes de precios */}

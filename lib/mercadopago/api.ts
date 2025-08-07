@@ -13,8 +13,6 @@ export const mercadopago = new MercadoPagoConfig({
   accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN!,
 });
 
-
-
 export const mercadopagoApi = {
   async suscribe(email: string, planId: string = 'basic', cookie?: string): Promise<string> {
     console.log('🔍 Función suscribe - Iniciando');
@@ -78,6 +76,43 @@ export const mercadopagoApi = {
         name: error instanceof Error ? error.name : 'Unknown',
         stack: error instanceof Error ? error.stack : 'No stack'
       });
+      throw error;
+    }
+  },
+
+  // Cancelar una suscripción en MercadoPago
+  async cancelSubscription(mercadopagoId: string): Promise<boolean> {
+    console.log('🔍 Función cancelSubscription - Iniciando');
+    console.log('📋 MercadoPago ID:', mercadopagoId);
+
+    try {
+      console.log('🔄 Cancelando suscripción en MercadoPago...');
+      
+      // Usar la API REST de MercadoPago para cancelar la suscripción
+      const response = await fetch(`https://api.mercadopago.com/preapproval/${mercadopagoId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: 'cancelled'
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error en respuesta de MercadoPago:', response.status, response.statusText);
+        console.error('❌ Error details:', errorText);
+        throw new Error(`Error al cancelar suscripción en MercadoPago: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Suscripción cancelada exitosamente en MercadoPago:', result);
+      
+      return true;
+    } catch (error) {
+      console.error('💥 Error en cancelSubscription:', error);
       throw error;
     }
   },
