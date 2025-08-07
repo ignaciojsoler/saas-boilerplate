@@ -105,28 +105,32 @@ async function handleSubscriptionPreapproval(body: WebhookData) {
     await updateSubscription(existingSubscription.id, updateData);
     console.log('Subscription updated:', mercadopago_id);
   } else {
-    // Crear nueva suscripción
-    const subscriptionData = {
-      user_id: userId,
-      plan_id: planId,
-      mercadopago_id: mercadopago_id.toString(),
-      amount: auto_recurring?.transaction_amount || 0,
-      currency: auto_recurring?.currency_id || 'ARS',
-      current_period_start: new Date().toISOString(),
-      current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      metadata: {
-        reason,
-        back_url,
-        collector_id,
-        application_id,
-        init_point,
-        sandbox_init_point,
-        created_via_webhook: true
-      }
-    };
+    // Solo crear nueva suscripción si el estado es válido
+    if (status === 'authorized' || status === 'pending') {
+      const subscriptionData = {
+        user_id: userId,
+        plan_id: planId,
+        mercadopago_id: mercadopago_id.toString(),
+        amount: auto_recurring?.transaction_amount || 0,
+        currency: auto_recurring?.currency_id || 'ARS',
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        metadata: {
+          reason,
+          back_url,
+          collector_id,
+          application_id,
+          init_point,
+          sandbox_init_point,
+          created_via_webhook: true
+        }
+      };
 
-    await createSubscription(subscriptionData);
-    console.log('Subscription created:', mercadopago_id);
+      await createSubscription(subscriptionData);
+      console.log('Subscription created:', mercadopago_id);
+    } else {
+      console.log('Skipping subscription creation - invalid status:', status);
+    }
   }
 
   return NextResponse.json({ status: 'success' });
@@ -158,6 +162,42 @@ async function handlePayment(body: WebhookData) {
     payment_type: paymentData.payment_type_id
   });
 
+  // Actualizar estado de la suscripción según el resultado del pago
+  if (paymentData.status === 'approved') {
+    // Pago exitoso - renovar suscripción
+    await updateSubscription(subscription.id, {
+      status: 'active',
+      current_period_start: new Date().toISOString(),
+      current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    });
+  } else if (paymentData.status === 'rejected' || paymentData.status === 'cancelled') {
+    // Pago fallido - marcar como expirada si es la primera vez, o mantener como expired si ya existía
+    const currentStatus = subscription.status;
+    if (currentStatus === 'pending') {
+      // Si es la primera vez y falla, eliminar la suscripción
+      await updateSubscription(subscription.id, {
+        status: 'cancelled',
+        metadata: {
+          ...subscription.metadata,
+          last_payment_status: paymentData.status,
+          last_payment_date: new Date().toISOString(),
+          cancelled_reason: 'payment_failed'
+        }
+      });
+    } else if (currentStatus === 'active') {
+      // Si ya estaba activa y falla el pago, marcar como expirada
+      await updateSubscription(subscription.id, {
+        status: 'expired',
+        metadata: {
+          ...subscription.metadata,
+          last_payment_status: paymentData.status,
+          last_payment_date: new Date().toISOString(),
+          expired_reason: 'payment_failed'
+        }
+      });
+    }
+  }
+
   console.log('Payment recorded:', paymentData.id);
   return NextResponse.json({ status: 'success' });
 }
@@ -188,13 +228,40 @@ async function handleSubscriptionPayment(body: WebhookData) {
     payment_type: paymentData.payment_type_id
   });
 
-  // Actualizar estado de la suscripción si el pago fue aprobado
+  // Actualizar estado de la suscripción según el resultado del pago
   if (paymentData.status === 'approved') {
+    // Pago exitoso - renovar suscripción
     await updateSubscription(subscription.id, {
       status: 'active',
       current_period_start: new Date().toISOString(),
       current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     });
+  } else if (paymentData.status === 'rejected' || paymentData.status === 'cancelled') {
+    // Pago fallido - marcar como expirada si es la primera vez, o mantener como expired si ya existía
+    const currentStatus = subscription.status;
+    if (currentStatus === 'pending') {
+      // Si es la primera vez y falla, eliminar la suscripción
+      await updateSubscription(subscription.id, {
+        status: 'cancelled',
+        metadata: {
+          ...subscription.metadata,
+          last_payment_status: paymentData.status,
+          last_payment_date: new Date().toISOString(),
+          cancelled_reason: 'payment_failed'
+        }
+      });
+    } else if (currentStatus === 'active') {
+      // Si ya estaba activa y falla el pago, marcar como expirada
+      await updateSubscription(subscription.id, {
+        status: 'expired',
+        metadata: {
+          ...subscription.metadata,
+          last_payment_status: paymentData.status,
+          last_payment_date: new Date().toISOString(),
+          expired_reason: 'payment_failed'
+        }
+      });
+    }
   }
 
   console.log('Subscription payment processed:', paymentData.id);
@@ -211,6 +278,8 @@ function mapMercadoPagoStatus(status: string): 'pending' | 'active' | 'cancelled
       return 'cancelled';
     case 'suspended':
       return 'suspended';
+    case 'expired':
+      return 'expired';
     default:
       return 'pending';
   }
