@@ -176,6 +176,7 @@ function BillingContent() {
               isPopular={plan.id === 'pro'}
               onSelect={handlePlanSelect}
               isLoading={isLoading}
+              currentSubscription={subscription}
             />
           ))}
         </div>
