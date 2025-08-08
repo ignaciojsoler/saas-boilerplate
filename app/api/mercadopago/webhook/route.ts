@@ -11,6 +11,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { SubscriptionStatus } from '@/lib/mercadopago/constants';
 import { dateUtils, statusMappers, planIdFromExternalRef } from '@/lib/mercadopago/utils';
 import { mercadopagoApi } from '@/lib/mercadopago/api';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 interface SubscriptionRow {
   id: string;
@@ -21,6 +22,7 @@ interface SubscriptionRow {
 
 class WebhookService {
   private supabase: SupabaseClient;
+  private admin = createAdminClient();
 
   constructor(supabase: SupabaseClient) {
     this.supabase = supabase;
@@ -38,13 +40,11 @@ class WebhookService {
 
   async findUserByEmail(email?: string): Promise<string | null> {
     if (!email) return null;
-
-    const { data, error } = await this.supabase.auth.admin.listUsers();
+    const { data, error } = await this.admin.auth.admin.listUsers();
     if (error) {
       console.error('Error fetching users:', error);
       return null;
     }
-
     const users = (data?.users as Array<{ id: string; email: string | null }> | undefined) || [];
     const targetUser = users.find(u => u.email === email);
     return targetUser?.id || null;

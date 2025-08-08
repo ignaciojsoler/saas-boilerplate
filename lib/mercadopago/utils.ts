@@ -18,6 +18,12 @@ export const dateUtils = {
 export const planIdFromExternalRef = (externalRef?: string): string =>
   externalRef?.split('_')[0] || 'basic';
 
+export const userIdFromExternalRef = (externalRef?: string): string | null => {
+  if (!externalRef) return null;
+  const parts = externalRef.split('_');
+  return parts.length > 1 ? parts[1] : null;
+};
+
 export const statusMappers = {
   mercadoPago: (status: string): SubscriptionStatus => {
     const statusMap: Record<string, SubscriptionStatus> = {
