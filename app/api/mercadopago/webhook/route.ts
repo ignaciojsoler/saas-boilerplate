@@ -6,91 +6,64 @@ import {
   getSubscriptionByMercadoPagoId,
   createSubscriptionPayment
 } from '@/lib/supabase/subscriptions';
-import { WebhookData } from '@/lib/mercadopago/types';
+import { PaymentData, PreapprovalData, WebhookData } from '@/lib/mercadopago/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { SubscriptionStatus } from '@/lib/mercadopago/constants';
+import { dateUtils, statusMappers, planIdFromExternalRef } from '@/lib/mercadopago/utils';
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    
-    console.log('Webhook received:', body);
+interface SubscriptionRow {
+  id: string;
+  status: SubscriptionStatus;
+  metadata?: Record<string, unknown> | null;
+  mercadopago_id?: string | null;
+}
 
-    // Registrar el evento del webhook
-    const supabase = await createClient();
-    await supabase
+class WebhookService {
+  private supabase: SupabaseClient;
+
+  constructor(supabase: SupabaseClient) {
+    this.supabase = supabase;
+  }
+
+  async logWebhookEvent(body: WebhookData): Promise<void> {
+    await this.supabase
       .from('webhook_events')
       .insert({
         mercadopago_id: body.data?.id?.toString() || 'unknown',
         event_type: body.type,
         event_data: body
       });
+  }
 
-    // Manejar diferentes tipos de eventos
-    switch (body.type) {
-      case 'subscription_preapproval':
-        return await handleSubscriptionPreapproval(body);
-      case 'payment':
-        return await handlePayment(body);
-      case 'subscription_authorized_payment':
-        return await handleSubscriptionPayment(body);
-      default:
-        console.log('Unhandled webhook event type:', body.type);
-        return NextResponse.json({ status: 'ignored' });
+  async findUserByEmail(email?: string): Promise<string | null> {
+    if (!email) return null;
+
+    const { data, error } = await this.supabase.auth.admin.listUsers();
+    if (error) {
+      console.error('Error fetching users:', error);
+      return null;
     }
 
-  } catch (error) {
-    console.error('Webhook error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-async function handleSubscriptionPreapproval(body: WebhookData) {
-  const subscriptionData = body.data;
-  
-  if (!subscriptionData) {
-    return NextResponse.json({ error: 'No subscription data' }, { status: 400 });
+    const users = (data?.users as Array<{ id: string; email: string | null }> | undefined) || [];
+    const targetUser = users.find(u => u.email === email);
+    return targetUser?.id || null;
   }
 
-  const supabase = await createClient();
+  async handleSubscriptionCreation(subscriptionData: PreapprovalData, userId: string, planId: string): Promise<void> {
+    const { status, id: mercadopago_id, auto_recurring, reason, back_url, collector_id, application_id, init_point, sandbox_init_point } = subscriptionData;
 
-  // Extraer información de la suscripción
-  const {
-    id: mercadopago_id,
-    status,
-    payer_email,
-    external_reference,
-    auto_recurring,
-    reason,
-    back_url,
-    collector_id,
-    application_id,
-    init_point,
-    sandbox_init_point
-  } = subscriptionData;
+    if (!['authorized', 'pending'].includes(status)) {
+      console.log('Skipping subscription creation - invalid status:', status);
+      return;
+    }
 
-  // Extraer el plan de la referencia externa
-  const planId = external_reference?.split('_')[0] || 'basic';
-
-  // Buscar el usuario por email en auth.users
-  const { data: user } = await supabase.auth.admin.listUsers();
-  
-  const targetUser = user.users.find(u => u.email === payer_email);
-  
-  if (!targetUser) {
-    console.error('User not found:', payer_email);
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
-
-  const userId = targetUser.id;
-
-  // Verificar si ya existe una suscripción con este ID de MercadoPago
-  const existingSubscription = await getSubscriptionByMercadoPagoId(mercadopago_id.toString());
-  
-  if (existingSubscription) {
-    // Actualizar suscripción existente
-    const updateData = {
-      status: mapMercadoPagoStatus(status),
-      current_period_start: new Date().toISOString(),
-      current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    const newSubscription = {
+      user_id: userId,
+      plan_id: planId,
+      mercadopago_id: mercadopago_id.toString(),
+      amount: auto_recurring?.transaction_amount || 0,
+      currency: auto_recurring?.currency_id || 'ARS',
+      ...dateUtils.periodRange(),
       metadata: {
         reason,
         back_url,
@@ -98,212 +71,175 @@ async function handleSubscriptionPreapproval(body: WebhookData) {
         application_id,
         init_point,
         sandbox_init_point,
-        last_webhook: new Date().toISOString()
+        created_via_webhook: true,
+      }
+    };
+
+    await createSubscription(newSubscription);
+    console.log('Subscription created:', mercadopago_id);
+  }
+
+  async handleSubscriptionUpdate(existingSubscription: SubscriptionRow, subscriptionData: PreapprovalData): Promise<void> {
+    const { status, reason, back_url, collector_id, application_id, init_point, sandbox_init_point, id } = subscriptionData;
+
+    const updateData = {
+      status: statusMappers.mercadoPago(status),
+      ...dateUtils.periodRange(),
+      metadata: {
+        ...(existingSubscription.metadata || {}),
+        reason,
+        back_url,
+        collector_id,
+        application_id,
+        init_point,
+        sandbox_init_point,
+        last_webhook: dateUtils.nowIso(),
       }
     };
 
     await updateSubscription(existingSubscription.id, updateData);
-    console.log('Subscription updated:', mercadopago_id);
-  } else {
-    // Solo crear nueva suscripción si el estado es válido
-    if (status === 'authorized' || status === 'pending') {
-      const subscriptionData = {
-        user_id: userId,
-        plan_id: planId,
-        mercadopago_id: mercadopago_id.toString(),
-        amount: auto_recurring?.transaction_amount || 0,
-        currency: auto_recurring?.currency_id || 'ARS',
-        current_period_start: new Date().toISOString(),
-        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        metadata: {
-          reason,
-          back_url,
-          collector_id,
-          application_id,
-          init_point,
-          sandbox_init_point,
-          created_via_webhook: true
-        }
-      };
+    console.log('Subscription updated:', id);
+  }
 
-      await createSubscription(subscriptionData);
-      console.log('Subscription created:', mercadopago_id);
+  async handlePaymentUpdate(subscription: SubscriptionRow, paymentData: PaymentData): Promise<void> {
+    await createSubscriptionPayment({
+      subscription_id: subscription.id,
+      mercadopago_payment_id: paymentData.id.toString(),
+      amount: paymentData.transaction_amount || 0,
+      currency: paymentData.currency_id || 'ARS',
+      status: statusMappers.payment(paymentData.status),
+      payment_method: paymentData.payment_method?.type,
+      payment_type: paymentData.payment_type_id,
+    });
+
+    await this.updateSubscriptionByPaymentStatus(subscription, paymentData);
+  }
+
+  private async updateSubscriptionByPaymentStatus(subscription: SubscriptionRow, paymentData: PaymentData): Promise<void> {
+    const { status } = paymentData;
+    const currentStatus = subscription.status;
+
+    switch (status) {
+      case 'approved':
+        await updateSubscription(subscription.id, {
+          status: 'active',
+          ...dateUtils.periodRange(),
+        });
+        break;
+
+      case 'rejected':
+      case 'cancelled': {
+        const baseMetadata = {
+          ...(subscription.metadata || {}),
+          last_payment_status: status,
+          last_payment_date: dateUtils.nowIso(),
+        };
+
+        if (currentStatus === 'pending') {
+          await updateSubscription(subscription.id, {
+            status: 'cancelled',
+            metadata: {
+              ...baseMetadata,
+              cancelled_reason: 'payment_failed',
+            }
+          });
+        } else if (currentStatus === 'active') {
+          await updateSubscription(subscription.id, {
+            status: 'expired',
+            metadata: {
+              ...baseMetadata,
+              expired_reason: 'payment_failed',
+            }
+          });
+        }
+        break;
+      }
+    }
+  }
+}
+
+class WebhookHandlers {
+  constructor(private service: WebhookService) {}
+
+  async handleSubscriptionPreapproval(body: WebhookData): Promise<NextResponse> {
+    const subscriptionData = body.data as PreapprovalData | undefined;
+    if (!subscriptionData) {
+      return NextResponse.json({ error: 'No subscription data' }, { status: 400 });
+    }
+
+    const { id: mercadopago_id, payer_email, external_reference } = subscriptionData;
+
+    const userId = await this.service.findUserByEmail(payer_email);
+    if (!userId) {
+      console.error('User not found:', payer_email);
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const planId = planIdFromExternalRef(external_reference);
+
+    const existingSubscription = await getSubscriptionByMercadoPagoId(mercadopago_id.toString());
+
+    if (existingSubscription) {
+      await this.service.handleSubscriptionUpdate(existingSubscription as SubscriptionRow, subscriptionData);
     } else {
-      console.log('Skipping subscription creation - invalid status:', status);
+      await this.service.handleSubscriptionCreation(subscriptionData, userId, planId);
     }
+
+    return NextResponse.json({ status: 'success' });
   }
 
-  return NextResponse.json({ status: 'success' });
-}
-
-async function handlePayment(body: WebhookData) {
-  const paymentData = body.data;
-  
-  if (!paymentData) {
-    return NextResponse.json({ error: 'No payment data' }, { status: 400 });
-  }
-
-  // Buscar la suscripción relacionada con este pago
-  const subscription = await getSubscriptionByMercadoPagoId(paymentData.subscription_id?.toString() || '');
-  
-  if (!subscription) {
-    console.log('No subscription found for payment:', paymentData.id);
-    return NextResponse.json({ status: 'ignored' });
-  }
-
-  // Crear registro de pago
-  await createSubscriptionPayment({
-    subscription_id: subscription.id,
-    mercadopago_payment_id: paymentData.id.toString(),
-    amount: paymentData.transaction_amount || 0,
-    currency: paymentData.currency_id || 'ARS',
-    status: mapPaymentStatus(paymentData.status),
-    payment_method: paymentData.payment_method?.type,
-    payment_type: paymentData.payment_type_id
-  });
-
-  // Actualizar estado de la suscripción según el resultado del pago
-  if (paymentData.status === 'approved') {
-    // Pago exitoso - renovar suscripción
-    await updateSubscription(subscription.id, {
-      status: 'active',
-      current_period_start: new Date().toISOString(),
-      current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-    });
-  } else if (paymentData.status === 'rejected' || paymentData.status === 'cancelled') {
-    // Pago fallido - marcar como expirada si es la primera vez, o mantener como expired si ya existía
-    const currentStatus = subscription.status;
-    if (currentStatus === 'pending') {
-      // Si es la primera vez y falla, eliminar la suscripción
-      await updateSubscription(subscription.id, {
-        status: 'cancelled',
-        metadata: {
-          ...subscription.metadata,
-          last_payment_status: paymentData.status,
-          last_payment_date: new Date().toISOString(),
-          cancelled_reason: 'payment_failed'
-        }
-      });
-    } else if (currentStatus === 'active') {
-      // Si ya estaba activa y falla el pago, marcar como expirada
-      await updateSubscription(subscription.id, {
-        status: 'expired',
-        metadata: {
-          ...subscription.metadata,
-          last_payment_status: paymentData.status,
-          last_payment_date: new Date().toISOString(),
-          expired_reason: 'payment_failed'
-        }
-      });
+  async handlePayment(body: WebhookData): Promise<NextResponse> {
+    const paymentData = body.data as PaymentData | undefined;
+    if (!paymentData) {
+      return NextResponse.json({ error: 'No payment data' }, { status: 400 });
     }
-  }
 
-  console.log('Payment recorded:', paymentData.id);
-  return NextResponse.json({ status: 'success' });
-}
+    const subscription = await getSubscriptionByMercadoPagoId(
+      paymentData.subscription_id?.toString() || ''
+    );
 
-async function handleSubscriptionPayment(body: WebhookData) {
-  const paymentData = body.data;
-  
-  if (!paymentData) {
-    return NextResponse.json({ error: 'No payment data' }, { status: 400 });
-  }
-
-  // Buscar la suscripción relacionada
-  const subscription = await getSubscriptionByMercadoPagoId(paymentData.subscription_id?.toString() || '');
-  
-  if (!subscription) {
-    console.log('No subscription found for payment:', paymentData.id);
-    return NextResponse.json({ status: 'ignored' });
-  }
-
-  // Crear registro de pago
-  await createSubscriptionPayment({
-    subscription_id: subscription.id,
-    mercadopago_payment_id: paymentData.id.toString(),
-    amount: paymentData.transaction_amount || 0,
-    currency: paymentData.currency_id || 'ARS',
-    status: mapPaymentStatus(paymentData.status),
-    payment_method: paymentData.payment_method?.type,
-    payment_type: paymentData.payment_type_id
-  });
-
-  // Actualizar estado de la suscripción según el resultado del pago
-  if (paymentData.status === 'approved') {
-    // Pago exitoso - renovar suscripción
-    await updateSubscription(subscription.id, {
-      status: 'active',
-      current_period_start: new Date().toISOString(),
-      current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-    });
-  } else if (paymentData.status === 'rejected' || paymentData.status === 'cancelled') {
-    // Pago fallido - marcar como expirada si es la primera vez, o mantener como expired si ya existía
-    const currentStatus = subscription.status;
-    if (currentStatus === 'pending') {
-      // Si es la primera vez y falla, eliminar la suscripción
-      await updateSubscription(subscription.id, {
-        status: 'cancelled',
-        metadata: {
-          ...subscription.metadata,
-          last_payment_status: paymentData.status,
-          last_payment_date: new Date().toISOString(),
-          cancelled_reason: 'payment_failed'
-        }
-      });
-    } else if (currentStatus === 'active') {
-      // Si ya estaba activa y falla el pago, marcar como expirada
-      await updateSubscription(subscription.id, {
-        status: 'expired',
-        metadata: {
-          ...subscription.metadata,
-          last_payment_status: paymentData.status,
-          last_payment_date: new Date().toISOString(),
-          expired_reason: 'payment_failed'
-        }
-      });
+    if (!subscription) {
+      console.log('No subscription found for payment:', paymentData.id);
+      return NextResponse.json({ status: 'ignored' });
     }
-  }
 
-  console.log('Subscription payment processed:', paymentData.id);
-  return NextResponse.json({ status: 'success' });
-}
+    await this.service.handlePaymentUpdate(subscription as SubscriptionRow, paymentData);
 
-function mapMercadoPagoStatus(status: string): 'pending' | 'active' | 'cancelled' | 'suspended' | 'expired' {
-  switch (status) {
-    case 'authorized':
-      return 'active';
-    case 'pending':
-      return 'pending';
-    case 'cancelled':
-      return 'cancelled';
-    case 'suspended':
-      return 'suspended';
-    case 'expired':
-      return 'expired';
-    default:
-      return 'pending';
+    console.log('Payment recorded:', paymentData.id);
+    return NextResponse.json({ status: 'success' });
   }
 }
 
-function mapPaymentStatus(status: string): 'pending' | 'approved' | 'rejected' | 'cancelled' | 'refunded' {
-  switch (status) {
-    case 'approved':
-      return 'approved';
-    case 'pending':
-      return 'pending';
-    case 'rejected':
-      return 'rejected';
-    case 'cancelled':
-      return 'cancelled';
-    case 'refunded':
-      return 'refunded';
-    default:
-      return 'pending';
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  try {
+    const body = await request.json();
+    console.log('Webhook received:', body);
+
+    const supabase = await createClient();
+    const service = new WebhookService(supabase as unknown as SupabaseClient);
+    const handlers = new WebhookHandlers(service);
+
+    await service.logWebhookEvent(body);
+
+    const eventHandlers: Record<string, (body: WebhookData) => Promise<NextResponse>> = {
+      subscription_preapproval: handlers.handleSubscriptionPreapproval.bind(handlers),
+      payment: handlers.handlePayment.bind(handlers),
+    };
+
+    const handler = eventHandlers[body.type as keyof typeof eventHandlers];
+    if (!handler) {
+      console.log('Unhandled webhook event type:', body.type);
+      return NextResponse.json({ status: 'ignored' });
+    }
+
+    return await handler(body);
+  } catch (error) {
+    console.error('Webhook error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// Manejar OPTIONS para CORS preflight
-export async function OPTIONS() {
+export async function OPTIONS(): Promise<NextResponse> {
   return new NextResponse(null, {
     status: 200,
     headers: {
@@ -312,4 +248,4 @@ export async function OPTIONS() {
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
-} 
+}

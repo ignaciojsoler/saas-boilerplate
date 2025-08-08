@@ -84,3 +84,27 @@ export interface MercadoPagoPlan {
   currency: string;
   features: string[];
 } 
+
+export interface PaymentData {
+  id: string | number;
+  subscription_id?: string | number;
+  transaction_amount?: number;
+  currency_id?: string;
+  status: string;
+  payment_method?: { type?: string };
+  payment_type_id?: string;
+}
+
+export interface PreapprovalData {
+  id: string | number;
+  status: string;
+  payer_email?: string;
+  external_reference?: string;
+  auto_recurring?: { transaction_amount?: number; currency_id?: string };
+  reason?: string;
+  back_url?: string;
+  collector_id?: string | number;
+  application_id?: string | number;
+  init_point?: string;
+  sandbox_init_point?: string;
+}

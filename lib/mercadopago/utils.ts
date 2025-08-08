@@ -4,7 +4,42 @@ import { SubscriptionPlan } from '@/lib/supabase/types';
 
 // Importar la API de MercadoPago
 import { mercadopagoApi } from './api';
+import { THIRTY_DAYS_MS, SubscriptionStatus, PaymentStatus } from './constants';
 
+export const dateUtils = {
+  nowIso: () => new Date().toISOString(),
+  nextPeriodEndIso: () => new Date(Date.now() + THIRTY_DAYS_MS).toISOString(),
+  periodRange: () => ({
+    current_period_start: new Date().toISOString(),
+    current_period_end: new Date(Date.now() + THIRTY_DAYS_MS).toISOString(),
+  }),
+};
+
+export const planIdFromExternalRef = (externalRef?: string): string =>
+  externalRef?.split('_')[0] || 'basic';
+
+export const statusMappers = {
+  mercadoPago: (status: string): SubscriptionStatus => {
+    const statusMap: Record<string, SubscriptionStatus> = {
+      authorized: 'active',
+      pending: 'pending',
+      cancelled: 'cancelled',
+      suspended: 'suspended',
+      expired: 'expired',
+    };
+    return statusMap[status] || 'pending';
+  },
+  payment: (status: string): PaymentStatus => {
+    const statusMap: Record<string, PaymentStatus> = {
+      approved: 'approved',
+      pending: 'pending',
+      rejected: 'rejected',
+      cancelled: 'cancelled',
+      refunded: 'refunded',
+    };
+    return statusMap[status] || 'pending';
+  },
+};
 
 
 // Función para crear suscripción usando MercadoPago
