@@ -218,13 +218,47 @@ class WebhookHandlers {
       return NextResponse.json({ error: 'No payment data' }, { status: 400 });
     }
 
-    const preapprovalId = (paymentData as { preapproval_id?: string | number }).preapproval_id;
-    const relatedId = (paymentData.subscription_id ?? preapprovalId)?.toString() || '';
+    // Intentar enriquecer con la API de MP si faltan campos
+    type EnrichedPayment = PaymentData & {
+      subscription_id?: string;
+      preapproval_id?: string;
+      external_reference?: string;
+      payer?: { email?: string };
+      payer_email?: string;
+    };
 
-    const subscription = await getSubscriptionByMercadoPagoId(relatedId);
+    let enriched: EnrichedPayment = paymentData as EnrichedPayment;
+    if (!('subscription_id' in (paymentData as EnrichedPayment)) || !('external_reference' in (paymentData as EnrichedPayment))) {
+      const fetched = await mercadopagoApi.getPaymentById(paymentData.id.toString());
+      if (fetched) {
+        enriched = { ...enriched, ...fetched } as EnrichedPayment;
+      }
+    }
+
+    const preapprovalId = (enriched.preapproval_id || enriched.subscription_id || '').toString();
+    const externalRef = enriched.external_reference as string | undefined;
+
+    let subscription = preapprovalId ? await getSubscriptionByMercadoPagoId(preapprovalId) : null;
+
+    // Si no existe la suscripción aún (pudo no haberse creado por la redirección), créala mínima
+    if (!subscription && preapprovalId) {
+      const planId = planIdFromExternalRef(externalRef);
+      const payerEmail = enriched.payer?.email || enriched.payer_email;
+      const userId = await this.service.findUserByEmail(payerEmail);
+      if (userId) {
+        await this.service.handleSubscriptionCreation({
+          id: preapprovalId,
+          status: 'pending',
+          payer_email: payerEmail,
+          external_reference: externalRef,
+          auto_recurring: { transaction_amount: enriched.transaction_amount, currency_id: enriched.currency_id },
+        } as unknown as PreapprovalData, userId, planId);
+        subscription = await getSubscriptionByMercadoPagoId(preapprovalId);
+      }
+    }
 
     if (!subscription) {
-      console.log('No subscription found for payment:', paymentData.id, 'lookup:', relatedId);
+      console.log('No subscription found for payment:', paymentData.id, 'lookup:', preapprovalId);
       return NextResponse.json({ status: 'ignored' });
     }
 

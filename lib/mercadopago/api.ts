@@ -14,10 +14,11 @@ export const mercadopago = new MercadoPagoConfig({
 });
 
 export const mercadopagoApi = {
-  async suscribe(email: string, planId: string = 'basic', cookie?: string): Promise<string> {
+  async suscribe(email: string, planId: string = 'basic', cookie?: string, userId?: string): Promise<string> {
     console.log('🔍 Función suscribe - Iniciando');
     console.log('📧 Email recibido:', email);
     console.log('📋 Plan ID recibido:', planId);
+    console.log('👤 User ID:', userId);
     console.log('🍪 Cookie recibida:', cookie);
     // Obtener el plan desde la base de datos
     const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/subscription/plans`, {
@@ -56,7 +57,7 @@ export const mercadopagoApi = {
           },
           payer_email: email,
           status: "pending",
-          external_reference: `${planId}_${Date.now()}`, // Referencia única
+          external_reference: `${planId}_${userId || Date.now()}`,
         },
       });
 
@@ -157,6 +158,30 @@ export const mercadopagoApi = {
       return await response.json();
     } catch (error) {
       console.error('💥 Error consultando preapproval:', error);
+      return null;
+    }
+  },
+
+  // Obtener un pago por ID (v1/payments/:id)
+  async getPaymentById(paymentId: string) {
+    try {
+      const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error al obtener pago:', response.status, response.statusText, errorText);
+        return null;
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('💥 Error consultando pago:', error);
       return null;
     }
   }

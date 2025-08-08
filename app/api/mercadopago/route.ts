@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📝 Body recibido:', body);
     
-    const { email, planId = 'basic' } = body;
+    const { email, planId = 'basic', userId } = body;
     console.log('📧 Email:', email);
     console.log('📋 Plan ID:', planId);
 
@@ -42,27 +42,13 @@ export async function POST(request: NextRequest) {
     console.log('🔄 Creando suscripción con MercadoPago...');
     console.log('llega aca 3');
     const cookie = (await cookies()).toString();
-    const checkoutUrl = await mercadopagoApi.suscribe(email, planId, cookie);
+    const checkoutUrl = await mercadopagoApi.suscribe(email, planId, cookie, userId);
     console.log('✅ URL de checkout generada:', checkoutUrl);
-    
-    return NextResponse.json({ 
-      success: true, 
-      checkoutUrl 
-    });
+
+    return NextResponse.json({ url: checkoutUrl });
   } catch (error) {
-    console.error('💥 Error completo:', error);
-    console.error('💥 Stack trace:', error instanceof Error ? error.stack : 'No stack trace available');
-    
-    // Log más específico del error
-    if (error instanceof Error) {
-      console.error('💥 Error message:', error.message);
-      console.error('💥 Error name:', error.name);
-    }
-    
-    return NextResponse.json({ 
-      error: 'Error al crear la suscripción',
-      details: error instanceof Error ? error.message : 'Error desconocido'
-    }, { status: 500 });
+    console.error('💥 Error en /api/mercadopago:', error);
+    return NextResponse.json({ error: 'Error al crear la suscripción' }, { status: 500 });
   }
 }
 
