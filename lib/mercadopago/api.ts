@@ -135,5 +135,29 @@ export const mercadopagoApi = {
     }
     const data = await response.json();
     return data.plans || [];
+  },
+
+  // Obtener una suscripción (preapproval) por ID desde MercadoPago
+  async getPreapprovalById(preapprovalId: string) {
+    try {
+      const response = await fetch(`https://api.mercadopago.com/preapproval/${preapprovalId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error al obtener preapproval:', response.status, response.statusText, errorText);
+        return null;
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('💥 Error consultando preapproval:', error);
+      return null;
+    }
   }
 }; 

@@ -10,6 +10,7 @@ import { PaymentData, PreapprovalData, WebhookData } from '@/lib/mercadopago/typ
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SubscriptionStatus } from '@/lib/mercadopago/constants';
 import { dateUtils, statusMappers, planIdFromExternalRef } from '@/lib/mercadopago/utils';
+import { mercadopagoApi } from '@/lib/mercadopago/api';
 
 interface SubscriptionRow {
   id: string;
@@ -162,17 +163,40 @@ class WebhookHandlers {
   constructor(private service: WebhookService) {}
 
   async handleSubscriptionPreapproval(body: WebhookData): Promise<NextResponse> {
-    const subscriptionData = body.data as PreapprovalData | undefined;
+    let subscriptionData = body.data as PreapprovalData | undefined;
     if (!subscriptionData) {
       return NextResponse.json({ error: 'No subscription data' }, { status: 400 });
     }
 
-    const { id: mercadopago_id, payer_email, external_reference } = subscriptionData;
+    const { id: mercadopago_id } = subscriptionData;
+
+    // Enriquecer desde MP si faltan datos esenciales
+    if (!('payer_email' in subscriptionData) || !('external_reference' in subscriptionData)) {
+      const fetched = await mercadopagoApi.getPreapprovalById(mercadopago_id.toString());
+      if (fetched) {
+        subscriptionData = {
+          ...subscriptionData,
+          payer_email: fetched.payer_email,
+          external_reference: fetched.external_reference,
+          status: fetched.status,
+          auto_recurring: fetched.auto_recurring,
+          reason: fetched.reason,
+          back_url: fetched.back_url,
+          collector_id: fetched.collector_id,
+          application_id: fetched.application_id,
+          init_point: fetched.init_point,
+          sandbox_init_point: fetched.sandbox_init_point,
+        } as PreapprovalData;
+      }
+    }
+
+    const { payer_email, external_reference } = subscriptionData as PreapprovalData;
 
     const userId = await this.service.findUserByEmail(payer_email);
     if (!userId) {
       console.error('User not found:', payer_email);
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      // Evitamos reintentos innecesarios de MP; registramos e ignoramos
+      return NextResponse.json({ status: 'ignored', reason: 'user_not_found' });
     }
 
     const planId = planIdFromExternalRef(external_reference);
@@ -180,9 +204,9 @@ class WebhookHandlers {
     const existingSubscription = await getSubscriptionByMercadoPagoId(mercadopago_id.toString());
 
     if (existingSubscription) {
-      await this.service.handleSubscriptionUpdate(existingSubscription as SubscriptionRow, subscriptionData);
+      await this.service.handleSubscriptionUpdate(existingSubscription as SubscriptionRow, subscriptionData as PreapprovalData);
     } else {
-      await this.service.handleSubscriptionCreation(subscriptionData, userId, planId);
+      await this.service.handleSubscriptionCreation(subscriptionData as PreapprovalData, userId, planId);
     }
 
     return NextResponse.json({ status: 'success' });
