@@ -194,12 +194,13 @@ class WebhookHandlers {
       return NextResponse.json({ error: 'No payment data' }, { status: 400 });
     }
 
-    const subscription = await getSubscriptionByMercadoPagoId(
-      paymentData.subscription_id?.toString() || ''
-    );
+    const preapprovalId = (paymentData as { preapproval_id?: string | number }).preapproval_id;
+    const relatedId = (paymentData.subscription_id ?? preapprovalId)?.toString() || '';
+
+    const subscription = await getSubscriptionByMercadoPagoId(relatedId);
 
     if (!subscription) {
-      console.log('No subscription found for payment:', paymentData.id);
+      console.log('No subscription found for payment:', paymentData.id, 'lookup:', relatedId);
       return NextResponse.json({ status: 'ignored' });
     }
 
@@ -224,6 +225,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const eventHandlers: Record<string, (body: WebhookData) => Promise<NextResponse>> = {
       subscription_preapproval: handlers.handleSubscriptionPreapproval.bind(handlers),
       payment: handlers.handlePayment.bind(handlers),
+      subscription_authorized_payment: handlers.handlePayment.bind(handlers),
     };
 
     const handler = eventHandlers[body.type as keyof typeof eventHandlers];
